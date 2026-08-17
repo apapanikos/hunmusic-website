@@ -82,8 +82,14 @@ Every other release shows its own sleeve from `public/covers/`, declared beside 
 ## The favicon
 
 `src/app/icon.svg` is the letter **h** lifted out of the baked wordmark path in
-`src/lib/warped-titles.ts` — the same warped outline the hero draws, not a redraw — set
-in `#ECEEF2` on the page's own `#0B0B0D`, filling 62% of the canvas.
+`src/lib/warped-titles.ts` — the same warped outline the hero draws, not a redraw — filled
+with a diagonal gradient through the palette (`--blue` → `--magenta` → near-white →
+`--acid`) on the page's own `#0B0B0D`, at 62% of the canvas.
+
+The gradient is an SVG `linearGradient`, not a crop of the artwork. A cropped sleeve was
+tried and looks better at 64px, but it costs an inlined JPEG and turns to mush at 16px,
+which is the size a browser tab actually renders. Vector stops stay crisp at every size and
+the mark still reads as the site's colours.
 
 Three files, because one format doesn't cover the ground:
 
