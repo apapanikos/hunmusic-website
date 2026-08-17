@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the template, which carries no values and is how anyone cloning
+# this knows which variables the app needs.
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# macOS AppleDouble sidecars (created on non-HFS volumes)
+._*
+.DS_Store

@@ -1,26 +1,313 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-ui: var(--font-michroma);
+  --font-display: var(--font-bebas);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Accents sampled from the artwork. Used sparingly — the art is loud, the UI isn't. */
+  --color-blue: var(--blue);
+  --color-magenta: var(--magenta);
+  --color-acid: var(--acid);
+  --color-signal: var(--signal);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+ * Palette sampled directly from the artwork — nothing invented.
+ *
+ *   void black  #0B0B0D   the inkblot voids
+ *   paper       #ECEDF2   the near-white light pools
+ *   blue        #2B5CE6   the deep royal-blue field
+ *   magenta     #FF3DA5   the hot pink ribbons
+ *   acid        #A6E22E   the lime edge banding
+ *   signal      #F5254E   the red in the rainbow sweeps, and the rim light
+ *                         on the about portrait
+ *
+ * Black and paper carry all the structure. The four chromatics only ever appear
+ * as accents, so the imagery stays the loudest thing on the page.
+ */
+:root {
+  --radius: 0.5rem;
+
+  --background: #0b0b0d;
+  --foreground: #eceef2;
+
+  --card: #131316;
+  --card-foreground: #eceef2;
+  --popover: #131316;
+  --popover-foreground: #eceef2;
+
+  --primary: #eceef2;
+  --primary-foreground: #0b0b0d;
+  --secondary: #1c1c20;
+  --secondary-foreground: #eceef2;
+
+  --muted: #1c1c20;
+  --muted-foreground: #8e8e98;
+  --accent: #1c1c20;
+  --accent-foreground: #eceef2;
+
+  --destructive: #f5254e;
+
+  --border: rgb(236 238 242 / 11%);
+  --input: rgb(236 238 242 / 16%);
+  --ring: #2b5ce6;
+
+  --blue: #2b5ce6;
+  --magenta: #ff3da5;
+  --acid: #a6e22e;
+  --signal: #f5254e;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply font-sans;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--magenta);
+    color: var(--background);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Wide-tracked mono label above every section heading. */
+  .eyebrow {
+    @apply font-ui text-[0.62rem] tracking-[0.22em] text-muted-foreground uppercase;
+  }
+
+  /* Mono index label in each block's corner — "01 — UPCOMING SINGLE". */
+  .block-index {
+    @apply font-ui text-[0.58rem] tracking-[0.2em] text-muted-foreground uppercase;
+  }
+
+  /* Clears the desktop rail — now a slim strip of rotated text on the page
+     edge, so the clearance is small. Applied to in-flow text containers only;
+     full-bleed artwork layers deliberately span the whole viewport and run
+     under the rail text. */
+  .rail-clear {
+    @apply lg:ml-14;
+  }
+
+  /* Oversized condensed block title. Bebas has no lowercase, so no uppercase
+     utility is needed; tracking is opened a touch since it sets very tight. */
+  .block-title {
+    @apply font-display leading-[0.9] tracking-[0.02em];
+  }
+
+  /* Hairline that fades out at both ends. */
+  .rule {
+    @apply h-px w-full border-0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgb(236 238 242 / 16%) 22%,
+      rgb(236 238 242 / 16%) 78%,
+      transparent
+    );
+  }
+}
+
+/*
+ * Liquid glass — one recipe, Linear/Vercel restraint.
+ *
+ * Layered so the SOLID panel is the default and translucency is the
+ * progressive enhancement:
+ *   1. base: solid readable panel (no backdrop-filter support);
+ *   2. @supports: low-tint frost — blur + saturate, 1px light rim, soft top
+ *      specular (inset highlight), gentle shadow;
+ *   3. prefers-reduced-transparency: back to solid, last so it wins.
+ *
+ * `.glass` is the panel form (rounded corners applied per use).
+ * `.glass-bar` is the full-width form for pinned title bars — border-bottom
+ * only, slightly stronger tint since huge type sits directly on it.
+ * `.glass-chip` is the small interactive form — the "+ Listen" actions on the
+ * release blocks. Same recipe, tighter shadow, and the only one of the three
+ * that responds to a pointer.
+ *
+ * These rules sit OUTSIDE Tailwind's cascade layers, which means they beat any
+ * utility class regardless of specificity — a `hover:bg-*` utility on a glass
+ * element silently does nothing. That's why the chip's hover state is written
+ * here rather than in the markup.
+ */
+.glass,
+.glass-bar,
+.glass-chip {
+  background: rgb(19 19 22 / 0.93);
+}
+
+.glass,
+.glass-chip {
+  border: 1px solid rgb(236 238 242 / 0.14);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 24px 60px -30px rgb(0 0 0 / 0.6);
+}
+
+.glass-chip {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 10px 30px -18px rgb(0 0 0 / 0.7);
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease;
+}
+
+.glass-chip:hover {
+  background: rgb(236 238 242 / 0.12);
+  border-color: rgb(236 238 242 / 0.34);
+}
+
+.glass-bar {
+  border-bottom: 1px solid rgb(236 238 242 / 0.1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-chip {
+    background: rgb(19 19 22 / 0.45);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  }
+  /* Chips sit directly on artwork rather than on a panel, so they run a touch
+     denser — the label has to hold over a near-white pool as well as a void. */
+  .glass-chip {
+    background: rgb(19 19 22 / 0.55);
+  }
+  .glass-bar {
+    background: rgb(11 11 13 / 0.52);
+    backdrop-filter: blur(16px) saturate(1.35);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-bar,
+  .glass-chip {
+    background: rgb(19 19 22 / 0.97);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Edge contrast for small text sitting on frost over busy artwork. */
+.frost-text {
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.55);
+}
+
+/* The wordmark's drift moved into Framer motion values (see hero-content.tsx)
+   so the cursor offset and the autonomous drift can compose on one property. */
+
+/*
+ * On-load reveal for the wordmark: a left-to-right wipe.
+ *
+ * Deliberately CSS rather than a Framer `initial`, because the element's
+ * resting state has to be *visible*. A JS-driven reveal that starts fully
+ * clipped leaves the entire brand mark invisible if the animation never runs —
+ * a backgrounded tab on load, a hydration error, JS disabled. With
+ * `animation-fill-mode: backwards` the clipped state only exists while the
+ * animation is pending, and the element falls back to unclipped.
+ *
+ * The reduced-motion block above collapses the duration, so it resolves
+ * instantly to the same visible end state.
+ */
+@keyframes wordmark-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/*
+ * The same piece, blurred way out, as a faint field behind the mark.
+ *
+ * Drifts via `background-position`, never `transform`. Transforming a blurred
+ * element scales the cached raster of the blur rather than re-blurring, which
+ * shows up as blocky pixelation. See the note in hero.tsx.
+ */
+@keyframes field-drift {
+  0%,
+  100% {
+    background-position: 38% 44%;
+  }
+  50% {
+    background-position: 62% 56%;
+  }
+}
+
+/* Release cover: a barely-there scale drift so the block isn't inert. */
+@keyframes cover-drift {
+  0%,
+  100% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.09);
+  }
 }

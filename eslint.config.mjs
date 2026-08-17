@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // AppleDouble sidecar files. macOS writes these next to every source file
+    // on non-HFS volumes (external/exFAT drives); ESLint chokes on their
+    // binary contents. Harmless, and never committed — see .gitignore.
+    "**/._*",
   ]),
 ]);
 
