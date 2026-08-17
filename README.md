@@ -1,7 +1,7 @@
 # hun — artist site
 
 A single-page home for an electronic music artist, with a mailing-list signup backed by
-Supabase.
+Kit.
 
 Not a release campaign — there's no record to count down to. The page is a hub: the
 wordmark, where to listen, who it is, and a standing "tell me when there's new music".
@@ -62,7 +62,7 @@ swap it, re-check that bar first; it's the tightest constraint on the page.
 | Framework | Next.js 16 (App Router), React 19, TypeScript strict |
 | Styling | Tailwind CSS v4 + shadcn/ui (Base UI primitives) |
 | Motion | Framer Motion 13 |
-| Data | Supabase (Postgres), written via a Server Action |
+| Mailing list | Kit (ConvertKit) v4 API, called from a Server Action |
 | Images | `next/image`, local files in `public/art/` |
 | Deploy | Vercel |
 
@@ -85,7 +85,7 @@ Every other release shows its own sleeve from `public/covers/`, declared beside 
 npm install
 ```
 
-Copy the env template and fill in your Supabase values:
+Copy the env template and fill in your Kit API key:
 
 ```bash
 cp .env.example .env.local
@@ -95,61 +95,56 @@ cp .env.example .env.local
 npm run dev
 ```
 
-The page renders fine without Supabase configured — the form just returns its error
-state on submit.
+The page renders fine with no API key configured — the form just returns its error state
+on submit, and the reason is logged server-side.
 
 ## Environment variables
 
 | Variable | Where it's used | Notes |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Server Action | Project URL from Supabase → Project Settings → Data API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server Action | **Server only.** Never prefix with `NEXT_PUBLIC_`, never commit |
+| `KIT_API_KEY` | Server Action | V4 key from Kit → Settings → Developer → API keys. **Server only** — never prefix with `NEXT_PUBLIC_`, never commit |
+| `KIT_FORM_ID` | Server Action | Optional. Attaches new subscribers to a Kit form, which is what fires its welcome email |
 | `NEXT_IMAGE_UNOPTIMIZED` | `next.config.ts` | Local-only macOS workaround, see Troubleshooting. Leave unset on Vercel |
 
-`src/lib/supabase/server.ts` imports `server-only`, so if the service-role client is ever
-pulled into a Client Component by mistake, the build fails instead of shipping the key.
+`src/lib/newsletter/kit.ts` imports `server-only`, so if the provider module is ever pulled
+into a Client Component by mistake, the build fails instead of shipping the key.
 
-## Database setup
+## The mailing list
 
-Run [`supabase/schema.sql`](supabase/schema.sql) once in the Supabase SQL editor
-(Dashboard → SQL Editor → New query). It's idempotent — safe to re-run.
+The provider is [Kit](https://kit.com) (formerly ConvertKit), and the entire integration is
+one file: [`src/lib/newsletter/kit.ts`](src/lib/newsletter/kit.ts), exposing a single
+`subscribeEmail()` returning `subscribed | already | error`.
 
-```sql
-create table if not exists public.waitlist (
-  id         uuid primary key default gen_random_uuid(),
-  email      text        not null,
-  created_at timestamptz not null default now()
-);
+There's no database. An earlier version wrote addresses to a Postgres table, which stored
+them perfectly and could not send anything — and sending is the whole point of a list, along
+with unsubscribe links, bounce handling and the legal footers that come with them. Kit's
+free tier covers 10k subscribers.
 
-create unique index if not exists waitlist_email_lower_key
-  on public.waitlist ((lower(email)));
+### Setup
 
-alter table public.waitlist enable row level security;
-```
+1. Create the account and a form at [kit.com](https://kit.com).
+2. Settings → Developer → API keys → create a **V4** key.
+3. Put it in `.env.local` as `KIT_API_KEY`, and in Vercel under Settings → Environment
+   Variables for Production and Preview.
+4. Optionally set `KIT_FORM_ID` (from the form's edit URL) so new subscribers get that
+   form's welcome email.
 
-### On the unique index
+### How the status codes map
 
-It's on `lower(email)`, not on the column. A plain `unique` would let `Alex@x.com` and
-`alex@x.com` both through as separate rows. The action lowercases before inserting, and
-the index is the backstop.
+`POST /v4/subscribers` is an upsert, and its status code carries the one distinction the UI
+needs: **201** for a new subscriber, **200** when Kit already knew the address. Those become
+the form's "You're in." and "Already on the list." states, so the page tells the truth
+without keeping a local copy of the list to check against.
 
-### On RLS
+Attaching to a form is a second call (`POST /v4/forms/{id}/subscribers/{subscriber_id}`). If
+it fails, the failure is logged and swallowed — the person is already subscribed by then, and
+showing them an error would invite a resubmit to fix something that isn't broken.
 
-RLS is enabled with **zero policies**, which is deliberate rather than unfinished. With
-RLS on and no policy present, the `anon` and `authenticated` roles can do nothing to this
-table — no select, no insert. Nobody can read or enumerate the list from a browser even
-if they have the publishable key.
+### Swapping providers
 
-The `service_role` key bypasses RLS, and it's the only key the Server Action uses. It
-never reaches the client.
-
-If you later drop the Server Action and insert straight from the browser, add an
-insert-only policy — note it grants no read access, so the list still can't be enumerated:
-
-```sql
-create policy "anon can join" on public.waitlist
-  for insert to anon with check (true);
-```
+Reimplement `subscribeEmail()` and nothing else changes: the Server Action and the form only
+know the three-state result. Buttondown, EmailOctopus and Resend Audiences all fit the same
+shape.
 
 ## How the signup works
 
@@ -158,8 +153,8 @@ returns a discriminated union rather than throwing:
 
 | Status | Cause | What the visitor sees |
 |---|---|---|
-| `success` | Row inserted | Confirmation panel |
-| `duplicate` | Postgres `23505` on the unique index | "Already on the list" — a confirmation, not an error |
+| `success` | Kit returned 201 (new subscriber) | Confirmation panel |
+| `duplicate` | Kit returned 200 (address already known) | "Already on the list" — a confirmation, not an error |
 | `invalid` | Failed Zod validation | Inline message under the field |
 | `error` | Anything else (logged server-side) | Generic retry message |
 
@@ -172,16 +167,17 @@ A honeypot field named `company` is hidden off-screen and marked `aria-hidden` w
 
 **Not included:** rate limiting. Server Actions are POST endpoints reachable by anyone
 who can send the request, so a public form like this will eventually get hammered. For
-production, put `@upstash/ratelimit` in front of the insert, keyed on IP. Left out here
-because it needs a second service and this is a portfolio build.
+production, put `@upstash/ratelimit` in front of the provider call, keyed on IP. Left out
+here because it needs a second service — note that unthrottled submissions also burn
+requests against Kit's own rate limit.
 
 ## Deploying to Vercel
 
 1. Push the repo to GitHub.
 2. In Vercel, **Add New → Project** and import it. The Next.js preset is detected
    automatically; no build settings to change.
-3. Under **Settings → Environment Variables**, add `NEXT_PUBLIC_SUPABASE_URL` and
-   `SUPABASE_SERVICE_ROLE_KEY` for Production, Preview and Development.
+3. Under **Settings → Environment Variables**, add `KIT_API_KEY` (and optionally
+   `KIT_FORM_ID`) for Production and Preview.
 4. Deploy.
 
 Env vars are only read at request time inside the Server Action, so a missing key
@@ -325,5 +321,5 @@ src/
 └─ lib/
    ├─ site.ts                    # all copy
    ├─ art.ts                     # artwork set, hero piece, portrait
-   └─ supabase/server.ts         # service-role client, server-only
+   └─ newsletter/kit.ts          # the only mailing-list provider code
 ```

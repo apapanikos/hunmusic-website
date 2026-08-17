@@ -2,10 +2,11 @@
 
 import { z } from "zod";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { site } from "@/lib/site";
+import { subscribeEmail } from "@/lib/newsletter/kit";
 
 /**
- * Result of a waitlist submission.
+ * Result of a mailing-list submission.
  *
  * `duplicate` is intentionally a distinct status rather than an error — being
  * already signed up is a success from the visitor's point of view, and the UI
@@ -21,9 +22,6 @@ export type WaitlistState =
 const emailSchema = z
   .email("That doesn't look like an email address.")
   .max(254, "That email address is too long.");
-
-/** Postgres unique-violation. Raised by the waitlist_email_lower_key index. */
-const UNIQUE_VIOLATION = "23505";
 
 export async function joinWaitlist(
   _prev: WaitlistState,
@@ -46,28 +44,23 @@ export async function joinWaitlist(
     };
   }
 
-  try {
-    const supabase = createServiceClient();
-    const { error } = await supabase.from("waitlist").insert({ email: parsed.data });
+  // Validate before calling out, so obvious typos never leave the server and a
+  // bad address can't burn a request against the provider's rate limit.
+  const result = await subscribeEmail(parsed.data, site.url);
 
-    if (error) {
-      if (error.code === UNIQUE_VIOLATION) {
-        return { status: "duplicate" };
-      }
-
-      console.error("[waitlist] insert failed", { code: error.code, message: error.message });
+  switch (result.status) {
+    case "subscribed":
+      return { status: "success" };
+    case "already":
+      return { status: "duplicate" };
+    case "error":
+      // The reason is deliberately server-side only: it names the provider and
+      // sometimes quotes its response, neither of which is the visitor's
+      // problem. This line is what to look for in the Vercel runtime logs.
+      console.error("[waitlist] signup failed", result.reason);
       return {
         status: "error",
         message: "Something went wrong on our end. Try again in a moment.",
       };
-    }
-
-    return { status: "success" };
-  } catch (cause) {
-    console.error("[waitlist] unexpected failure", cause);
-    return {
-      status: "error",
-      message: "Something went wrong on our end. Try again in a moment.",
-    };
   }
 }
