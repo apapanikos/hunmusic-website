@@ -30,6 +30,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: `${site.artist} — ${site.tagline.join(", ")}`,
   description: site.description,
+  // Names the apex as the one real address, whatever hostname served the
+  // request. The www redirect in next.config.ts is the other half of this.
+  alternates: { canonical: "/" },
   openGraph: {
     title: site.artist,
     description: site.description,

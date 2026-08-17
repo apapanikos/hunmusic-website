@@ -22,6 +22,28 @@ const nextConfig: NextConfig = {
      */
     unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === "1",
   },
+
+  /**
+   * www → apex, permanently.
+   *
+   * Both hostnames are attached to the Vercel project, so without this they'd
+   * each serve the whole site: two URLs for every page, splitting how search
+   * engines and any shared link see it. `site.url` (and therefore every og:url)
+   * names the apex, so the apex is what should answer.
+   *
+   * Kept here rather than in the dashboard's redirect setting so it lives in the
+   * repo, where it's visible and survives a project being recreated.
+   */
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.hunmusic.com" }],
+        destination: "https://hunmusic.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
