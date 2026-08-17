@@ -67,6 +67,12 @@ export const site = {
     eyebrow: "Releases",
     title: "Releases",
     body: "Each one opens where you already listen — Spotify, Apple Music, SoundCloud, wherever.",
+    /**
+     * Shown instead while nothing listenable is on the page — currently the
+     * case, with the back catalogue behind the `hidden` flag in
+     * src/data/releases.ts. Swapped automatically, not by hand.
+     */
+    bodyUpcomingOnly: "What's next, first. The mailing list is where it lands.",
     /** The action on every released block. The "+" is added by the chip. */
     listenCta: "Listen",
     /** Shown instead on anything upcoming — scrolls to the mailing list. */

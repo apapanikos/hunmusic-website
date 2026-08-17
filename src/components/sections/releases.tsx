@@ -4,7 +4,7 @@ import { ActionChip, actionChipClass } from "@/components/block";
 import { StickyTitle } from "@/components/block-title";
 import { Reveal } from "@/components/motion/reveal";
 import { NotifyButton } from "@/components/sections/notify-button";
-import { releaseMeta, releases, type Release } from "@/data/releases";
+import { hasListenableRelease, releaseMeta, releases, type Release } from "@/data/releases";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +47,7 @@ export function Releases() {
         <div className="mx-auto max-w-6xl px-6 pt-8">
           <Reveal blur={false} className="mt-2">
             <p className="max-w-xl text-[0.95rem] leading-relaxed text-muted-foreground">
-              {site.releases.body}
+              {hasListenableRelease ? site.releases.body : site.releases.bodyUpcomingOnly}
             </p>
           </Reveal>
         </div>

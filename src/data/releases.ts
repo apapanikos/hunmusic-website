@@ -88,6 +88,20 @@ export type Release = {
    * release is worth the third-party chrome — the smart link is the default.
    */
   embedUrl?: string;
+  /**
+   * TEMPORARY CURTAIN — keeps a finished entry out of the page.
+   *
+   * A hidden release is filtered out of `releases` entirely, so it isn't in the
+   * markup at all: no title, no description, no smart link in the HTML source.
+   * That's the point — "hidden" that only means `display: none` still ships
+   * everything to anyone who opens view-source.
+   *
+   * Its cover stays in `public/covers/` and is still reachable by direct URL
+   * (and `check:art` still verifies it), so the assets are ready the moment the
+   * flag comes off. Unhide by deleting the line — one entry at a time, or all
+   * of them: search the file for "hidden: true".
+   */
+  hidden?: boolean;
 };
 
 const RELEASES: readonly Release[] = [
@@ -119,6 +133,7 @@ const RELEASES: readonly Release[] = [
     duration: "4:37",
     smartLink: "https://tr.ee/iE_Iqv2PDG",
     spotifyUrl: "https://open.spotify.com/track/3ijZKh1rJXHlh9WYvsCLYJ",
+    hidden: true, // TEMPORARY — delete to put this single back on the page.
     artworkSrc: "/covers/unwriteme.jpg",
     artworkAlt:
       "Cover for unwriteme: a scan-lined, glitched swirl in mint and pink, the title set small at the bottom left.",
@@ -134,6 +149,7 @@ const RELEASES: readonly Release[] = [
     duration: "4:16",
     smartLink: "https://tr.ee/uyok_c85iP",
     spotifyUrl: "https://open.spotify.com/track/0B4OYDHALPtTCzTprcpXE4",
+    hidden: true, // TEMPORARY — delete to put this single back on the page.
     artworkSrc: "/covers/get-you-tough-get-you-tender.jpg",
     artworkAlt:
       "Cover for Get you Tough. Get you Tender: a tall panel of pale iridescent light on near-black, the title set twice — once solid, once ghosted beneath it.",
@@ -149,6 +165,7 @@ const RELEASES: readonly Release[] = [
     duration: "3:46",
     smartLink: "https://tr.ee/tgChztEdSE",
     spotifyUrl: "https://open.spotify.com/track/266xqRsgBvXQkAy7fSwklj",
+    hidden: true, // TEMPORARY — delete to put this single back on the page.
     artworkSrc: "/covers/thisaugust.jpg",
     artworkAlt:
       "Cover for Thisaugust: dense smeared reds and corals shot through with teal, like paint dragged across glass.",
@@ -164,6 +181,7 @@ const RELEASES: readonly Release[] = [
     duration: "3:56",
     smartLink: "https://tr.ee/bfls0rlo-6",
     spotifyUrl: "https://open.spotify.com/track/7bbesP3nGc3zO8Ne38kblF",
+    hidden: true, // TEMPORARY — delete to put this single back on the page.
     artworkSrc: "/covers/ofyouandme.jpg",
     artworkAlt:
       "Cover for Ofyouandme.: turquoise and magenta paint strokes over black, swelling into orange down the right side.",
@@ -179,11 +197,24 @@ function rank(release: Release): number {
 }
 
 /**
- * The stack, newest first. Copied before sorting so the source array stays as
- * written; `Array.prototype.sort` is stable, so entries sharing a year hold
- * their file order (which is what keeps Thisaugust above Ofyouandme.).
+ * The stack, newest first, minus anything behind the `hidden` curtain.
+ *
+ * Copied before sorting so the source array stays as written; `Array.prototype
+ * .sort` is stable, so entries sharing a year hold their file order (which is
+ * what keeps Thisaugust above Ofyouandme. when they're both showing).
  */
-export const releases: readonly Release[] = [...RELEASES].sort((a, b) => rank(b) - rank(a));
+export const releases: readonly Release[] = [...RELEASES]
+  .filter((release) => !release.hidden)
+  .sort((a, b) => rank(b) - rank(a));
+
+/**
+ * True when at least one visible release can actually be listened to.
+ *
+ * The section's intro copy promises the blocks "open where you already listen",
+ * which is a lie while every listenable single is hidden — so the copy follows
+ * the data rather than being maintained by hand.
+ */
+export const hasListenableRelease = releases.some((release) => release.smartLink !== "");
 
 /**
  * The block's meta line: "2026 · 4:37", "2020", or "Coming soon".
