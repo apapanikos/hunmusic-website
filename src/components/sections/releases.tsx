@@ -103,7 +103,12 @@ function ReleaseBlock({ release, index, featured }: ReleaseBlockProps) {
       data-nav-target="#releases"
       className="relative scroll-mt-14 border-t border-border py-14 first:border-t-0 first:pt-0 sm:py-20 lg:scroll-mt-0"
     >
-      <div className="relative w-full px-6 lg:grid lg:grid-cols-12 lg:items-center">
+      {/* items-start, not items-center: the text column is much shorter than a
+          square sleeve now that the catalogue carries no paragraph, and centred
+          it floated in the middle of the cover with no relationship to it. Top
+          alignment gives every block one shared horizontal — sleeve top, status
+          label, title — however tall the copy beside it runs. */}
+      <div className="relative w-full px-6 lg:grid lg:grid-cols-12 lg:items-start">
         {/* ── ARTWORK ── bleeds to the viewport edge on its side, and under the
             rail text when that's the left one — the rail sits over artwork
             everywhere else on the page too.
