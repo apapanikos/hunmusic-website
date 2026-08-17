@@ -89,19 +89,18 @@ export type Release = {
    */
   embedUrl?: string;
   /**
-   * TEMPORARY CURTAIN — keeps a finished entry out of the page.
+   * Keeps `description` out of the block, leaving cover, title, date and the
+   * "+ Listen" action.
    *
-   * A hidden release is filtered out of `releases` entirely, so it isn't in the
-   * markup at all: no title, no description, no smart link in the HTML source.
-   * That's the point — "hidden" that only means `display: none` still ships
-   * everything to anyone who opens view-source.
+   * The back catalogue runs this way on purpose: a sleeve and a title are all a
+   * released track needs to be recognised, and four paragraphs down the stack
+   * turned a discography into an essay. The upcoming record is the one that has
+   * to explain itself, so IKIGAI keeps its copy and the singles don't.
    *
-   * Its cover stays in `public/covers/` and is still reachable by direct URL
-   * (and `check:art` still verifies it), so the assets are ready the moment the
-   * flag comes off. Unhide by deleting the line — one entry at a time, or all
-   * of them: search the file for "hidden: true".
+   * The text stays in this file either way — it's written, it's good, and it's
+   * one line away from the page. Delete the flag to bring a paragraph back.
    */
-  hidden?: boolean;
+  hideDescription?: boolean;
 };
 
 const RELEASES: readonly Release[] = [
@@ -133,7 +132,7 @@ const RELEASES: readonly Release[] = [
     duration: "4:37",
     smartLink: "https://tr.ee/iE_Iqv2PDG",
     spotifyUrl: "https://open.spotify.com/track/3ijZKh1rJXHlh9WYvsCLYJ",
-    hidden: true, // TEMPORARY — delete to put this single back on the page.
+    hideDescription: true, // Sleeve + title + "+ Listen" only; copy stays below.
     artworkSrc: "/covers/unwriteme.jpg",
     artworkAlt:
       "Cover for unwriteme: a scan-lined, glitched swirl in mint and pink, the title set small at the bottom left.",
@@ -149,7 +148,7 @@ const RELEASES: readonly Release[] = [
     duration: "4:16",
     smartLink: "https://tr.ee/uyok_c85iP",
     spotifyUrl: "https://open.spotify.com/track/0B4OYDHALPtTCzTprcpXE4",
-    hidden: true, // TEMPORARY — delete to put this single back on the page.
+    hideDescription: true, // Sleeve + title + "+ Listen" only; copy stays below.
     artworkSrc: "/covers/get-you-tough-get-you-tender.jpg",
     artworkAlt:
       "Cover for Get you Tough. Get you Tender: a tall panel of pale iridescent light on near-black, the title set twice — once solid, once ghosted beneath it.",
@@ -165,7 +164,7 @@ const RELEASES: readonly Release[] = [
     duration: "3:46",
     smartLink: "https://tr.ee/tgChztEdSE",
     spotifyUrl: "https://open.spotify.com/track/266xqRsgBvXQkAy7fSwklj",
-    hidden: true, // TEMPORARY — delete to put this single back on the page.
+    hideDescription: true, // Sleeve + title + "+ Listen" only; copy stays below.
     artworkSrc: "/covers/thisaugust.jpg",
     artworkAlt:
       "Cover for Thisaugust: dense smeared reds and corals shot through with teal, like paint dragged across glass.",
@@ -181,7 +180,7 @@ const RELEASES: readonly Release[] = [
     duration: "3:56",
     smartLink: "https://tr.ee/bfls0rlo-6",
     spotifyUrl: "https://open.spotify.com/track/7bbesP3nGc3zO8Ne38kblF",
-    hidden: true, // TEMPORARY — delete to put this single back on the page.
+    hideDescription: true, // Sleeve + title + "+ Listen" only; copy stays below.
     artworkSrc: "/covers/ofyouandme.jpg",
     artworkAlt:
       "Cover for Ofyouandme.: turquoise and magenta paint strokes over black, swelling into orange down the right side.",
@@ -197,15 +196,13 @@ function rank(release: Release): number {
 }
 
 /**
- * The stack, newest first, minus anything behind the `hidden` curtain.
+ * The stack, newest first.
  *
  * Copied before sorting so the source array stays as written; `Array.prototype
  * .sort` is stable, so entries sharing a year hold their file order (which is
- * what keeps Thisaugust above Ofyouandme. when they're both showing).
+ * what keeps Thisaugust above Ofyouandme.).
  */
-export const releases: readonly Release[] = [...RELEASES]
-  .filter((release) => !release.hidden)
-  .sort((a, b) => rank(b) - rank(a));
+export const releases: readonly Release[] = [...RELEASES].sort((a, b) => rank(b) - rank(a));
 
 /**
  * True when at least one visible release can actually be listened to.

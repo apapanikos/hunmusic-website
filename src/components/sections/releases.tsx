@@ -208,7 +208,7 @@ function ReleaseBlock({ release, index, featured }: ReleaseBlockProps) {
               </p>
             ) : null}
 
-            {release.description ? (
+            {release.description && !release.hideDescription ? (
               <p
                 className={cn(
                   "frost-text mt-4 max-w-md text-[0.92rem] leading-relaxed text-foreground/70",
