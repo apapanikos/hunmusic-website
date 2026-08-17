@@ -14,7 +14,12 @@ export const site = {
    * the genre would, and it's already the voice used elsewhere.
    */
   tagline: ["synthetic feelings", "noise from the in-between"],
-  url: "https://hun.example.com",
+  /**
+   * The canonical origin. `metadataBase` in layout.tsx builds every absolute
+   * URL from it — og:url, og:image, twitter:image — so a wrong value here is
+   * silent: the page looks fine and its link previews render blank.
+   */
+  url: "https://hunmusic.com",
   description: "hun — synthetic feelings, noise from the in-between. New music, occasionally, in your inbox.",
 
   /**
