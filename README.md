@@ -18,11 +18,11 @@ sticky` on a frosted bar: it pins while its block scrolls and hands off at the s
 no JS (see `src/components/block-title.tsx` — and its warning about `overflow-hidden`
 ancestors, which silently kill the pinning). Inside the releases stack the per-release
 titles are in-flow instead, alternating left and right block by block, oversized enough to
-run onto the artwork beside them. Display titles — and the hero wordmark — are wavy: the glyph outlines are warped
+run onto the artwork beside them — and set in plain Bebas, not warped: the wave is identity
+and belongs to the section headings, while a song title is information someone has to read.
+Section titles and the hero wordmark are the wavy ones: those glyph outlines are warped
 point-by-point at build time by `scripts/generate-warped-titles.mjs` and baked into static
-SVG paths (`src/lib/warped-titles.ts`). The baker reads the fixed titles from `site.ts`
-and one per release from `src/data/releases.ts`, so a new record needs no edit here — just
-a regenerate:
+SVG paths (`src/lib/warped-titles.ts`). Change one of those and regenerate:
 
 ```bash
 npm run generate:titles
@@ -30,8 +30,8 @@ npm run generate:titles
 
 `npm run check:titles` runs on `prebuild` and fails the build if the copy and the baked
 paths drift apart — otherwise the page would announce one word via `aria-label` and draw
-another. A release with no bake *yet* is only a warning: its block falls back to live
-Bebas, unwarped but correct.
+another. Song titles aren't checked because they aren't baked: they're live type, so the
+DOM and the drawing can't disagree.
 
 An SVG-filter approach (`feDisplacementMap`) was tried first and rejected: filters give
 soft, noisy edges where this look needs to be crisp. Warping real Béziers stays sharp at
@@ -78,6 +78,28 @@ wordmark and fronts the IKIGAI release block, and the portrait sits in the about
 Every other release shows its own sleeve from `public/covers/`, declared beside it in
 `src/data/releases.ts`. See
 [`public/art/README.md`](public/art/README.md) for the rotation config and export notes.
+
+## The favicon
+
+`src/app/icon.svg` is the letter **h** lifted out of the baked wordmark path in
+`src/lib/warped-titles.ts` — the same warped outline the hero draws, not a redraw — set
+in `#ECEEF2` on the page's own `#0B0B0D`, filling 62% of the canvas.
+
+Three files, because one format doesn't cover the ground:
+
+| File | Serves |
+|---|---|
+| `src/app/icon.svg` | The `<link rel="icon">` browsers actually use. Vector, so it's sharp at any size |
+| `src/app/apple-icon.png` | 180×180 for iOS home screens, which ignore SVG |
+| `public/favicon.ico` | The bare `/favicon.ico` request browsers and link unfurlers make regardless of `<link>` tags |
+
+The `.ico` lives in `public/` rather than `app/` deliberately: Next's metadata pipeline
+decodes an `app/favicon.ico` and rejects any PNG inside it that isn't RGBA, and headless
+Chrome — which rasterised these, there being no image library in the project — drops the
+alpha channel when every pixel is opaque. `public/` is served byte-for-byte with no
+decoding, which sidesteps the whole argument.
+
+To change the mark, edit `icon.svg` and re-rasterise the other two from it at 180 and 32.
 
 ## Quick start
 
